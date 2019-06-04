@@ -1,6 +1,10 @@
 package testrail
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // Case represents a Test Case
 type Case struct {
@@ -22,6 +26,34 @@ type Case struct {
 	TypeID               int          `json:"type_id"`
 	UpdatedBy            int          `json:"updated_by"`
 	UdpatedOn            int          `json:"updated_on"`
+	CustomFields		 map[string]interface{}
+}
+
+func (c *Case) UnmarshalJSON(data []byte) error {
+	// Alias the type to avoid infinite recursion
+	// The alias has all the properties and none of the methods
+	type Alias Case
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+	// Unmarshal the original object
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	//Now unmarshal the object into a map and assign it to customerfields
+	m := make(map[string]interface{})
+	c.CustomFields = make(map[string]interface{})
+	if err2 := json.Unmarshal(data, &m); err2 == nil {
+		for k, v := range m {
+			if strings.HasPrefix(k, "custom_") {
+				c.CustomFields[k] = v
+			}
+		}
+	}
+	return nil
 }
 
 // CustomStep represents the custom steps
