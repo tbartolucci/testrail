@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"github.com/fatih/structs"
 )
 
 // Case represents a Test Case
@@ -27,6 +28,18 @@ type Case struct {
 	UpdatedBy            int          `json:"updated_by"`
 	UdpatedOn            int          `json:"updated_on"`
 	CustomFields		 map[string]interface{}
+}
+
+func (c *Case) MarshalJSON() ([]byte, error) {
+	type Alias Case
+	m := structs.Map(c)
+	for k, v := range c.CustomFields {
+		if strings.HasPrefix(k, "custom_") {
+			m[k] = v
+		}
+	}
+
+	return json.Marshal(m)
 }
 
 func (c *Case) UnmarshalJSON(data []byte) error {
